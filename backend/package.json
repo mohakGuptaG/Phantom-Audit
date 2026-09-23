@@ -7,7 +7,8 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "jest"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -19,7 +20,10 @@
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
+    "@types/jest": "^30.0.0",
     "@types/node": "^22.10.5",
+    "jest": "^30.5.2",
+    "ts-jest": "^29.4.13",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.7.2"
   }
