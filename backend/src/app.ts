@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import scanRoutes from "./routes/scan.routes";
 
 const app = express();
 
@@ -12,5 +13,7 @@ app.get("/health", (_req, res) => {
     service: "phantom-audit-backend"
   });
 });
+
+app.use("/api/scans", scanRoutes);
 
 export default app;
