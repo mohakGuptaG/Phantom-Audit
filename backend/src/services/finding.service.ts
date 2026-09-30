@@ -5,6 +5,8 @@ import {
   IFinding
 } from "../models/finding.model";
 import { FindingRepository } from "../repositories/finding.repository";
+import { ScanRepository } from "../repositories/scan.repository";
+import { ScreenshotRepository } from "../repositories/screenshot.repository";
 
 export interface CreateFindingInput {
   scanId: string;
@@ -18,7 +20,9 @@ export interface CreateFindingInput {
 
 export class FindingService {
   constructor(
-    private readonly findingRepository: FindingRepository
+    private readonly findingRepository: FindingRepository,
+    private readonly scanRepository: ScanRepository,
+    private readonly screenshotRepository: ScreenshotRepository
   ) {}
 
   async getFindingsByScanId(
@@ -33,6 +37,14 @@ export class FindingService {
     input: CreateFindingInput
   ): Promise<IFinding> {
     this.validateScanId(input.scanId);
+
+    const scan = await this.scanRepository.findById(
+      input.scanId
+    );
+
+    if (!scan) {
+      throw new Error("Scan not found");
+    }
 
     if (!input.category?.trim()) {
       throw new Error("Finding category is required");
@@ -50,11 +62,19 @@ export class FindingService {
       throw new Error("Invalid finding severity");
     }
 
-    if (
-      input.screenshotId &&
-      !mongoose.isValidObjectId(input.screenshotId)
-    ) {
-      throw new Error("Invalid screenshot ID");
+    if (input.screenshotId) {
+      if (!mongoose.isValidObjectId(input.screenshotId)) {
+        throw new Error("Invalid screenshot ID");
+      }
+
+      const screenshot =
+        await this.screenshotRepository.findById(
+          input.screenshotId
+        );
+
+      if (!screenshot) {
+        throw new Error("Screenshot not found");
+      }
     }
 
     return this.findingRepository.create({

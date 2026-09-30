@@ -1,9 +1,13 @@
 import { Request, Response } from "express";
 import { FindingRepository } from "../repositories/finding.repository";
+import { ScanRepository } from "../repositories/scan.repository";
+import { ScreenshotRepository } from "../repositories/screenshot.repository";
 import { FindingService } from "../services/finding.service";
 
 const findingService = new FindingService(
-  new FindingRepository()
+  new FindingRepository(),
+  new ScanRepository(),
+  new ScreenshotRepository()
 );
 
 export const getFindings = async (
@@ -14,15 +18,12 @@ export const getFindings = async (
     const { scanId } = req.params;
 
     if (Array.isArray(scanId)) {
-      res.status(400).json({
-        error: "Invalid scan ID"
-      });
+      res.status(400).json({ error: "Invalid scan ID" });
       return;
     }
 
-    const findings = await findingService.getFindingsByScanId(
-      scanId
-    );
+    const findings =
+      await findingService.getFindingsByScanId(scanId);
 
     res.status(200).json({
       scanId,
@@ -34,8 +35,6 @@ export const getFindings = async (
         ? error.message
         : "Failed to retrieve findings";
 
-    res.status(400).json({
-      error: message
-    });
+    res.status(400).json({ error: message });
   }
 };

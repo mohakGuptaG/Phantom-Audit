@@ -9,10 +9,14 @@ import {
 import { FindingService } from "../src/services/finding.service";
 import { IFinding } from "../src/models/finding.model";
 import { FindingRepository } from "../src/repositories/finding.repository";
+import { ScanRepository } from "../src/repositories/scan.repository";
+import { ScreenshotRepository } from "../src/repositories/screenshot.repository";
 
 describe("FindingService", () => {
   let findingService: FindingService;
   let findingRepository: jest.Mocked<FindingRepository>;
+  let scanRepository: jest.Mocked<ScanRepository>;
+  let screenshotRepository: jest.Mocked<ScreenshotRepository>;
 
   beforeEach(() => {
     findingRepository = {
@@ -20,7 +24,21 @@ describe("FindingService", () => {
       findByScanId: jest.fn()
     } as unknown as jest.Mocked<FindingRepository>;
 
-    findingService = new FindingService(findingRepository);
+    scanRepository = {
+      findById: jest.fn()
+    } as unknown as jest.Mocked<ScanRepository>;
+
+    screenshotRepository = {
+      create: jest.fn(),
+      findByScanId: jest.fn(),
+      findById: jest.fn()
+    } as unknown as jest.Mocked<ScreenshotRepository>;
+
+    findingService = new FindingService(
+      findingRepository,
+      scanRepository,
+      screenshotRepository
+    );
   });
 
   it("creates a valid finding through the repository", async () => {
@@ -33,7 +51,13 @@ describe("FindingService", () => {
       severity: "LOW"
     } as unknown as IFinding;
 
-    findingRepository.create.mockResolvedValue(mockFinding);
+    scanRepository.findById.mockResolvedValue(
+      {} as never
+    );
+
+    findingRepository.create.mockResolvedValue(
+      mockFinding
+    );
 
     const result = await findingService.createFinding({
       scanId: "6ab40f2a31d9796493ee8357",
@@ -44,7 +68,15 @@ describe("FindingService", () => {
       evidence: " Test evidence "
     });
 
-    expect(findingRepository.create).toHaveBeenCalledWith({
+    expect(
+      scanRepository.findById
+    ).toHaveBeenCalledWith(
+      "6ab40f2a31d9796493ee8357"
+    );
+
+    expect(
+      findingRepository.create
+    ).toHaveBeenCalledWith({
       scanId: "6ab40f2a31d9796493ee8357",
       category: "TEST",
       title: "Test finding",
@@ -68,10 +100,20 @@ describe("FindingService", () => {
       })
     ).rejects.toThrow("Invalid scan ID");
 
-    expect(findingRepository.create).not.toHaveBeenCalled();
+    expect(
+      scanRepository.findById
+    ).not.toHaveBeenCalled();
+
+    expect(
+      findingRepository.create
+    ).not.toHaveBeenCalled();
   });
 
   it("rejects an invalid severity", async () => {
+    scanRepository.findById.mockResolvedValue(
+      {} as never
+    );
+
     await expect(
       findingService.createFinding({
         scanId: "6ab40f2a31d9796493ee8357",
@@ -82,6 +124,108 @@ describe("FindingService", () => {
       })
     ).rejects.toThrow("Invalid finding severity");
 
-    expect(findingRepository.create).not.toHaveBeenCalled();
+    expect(
+      findingRepository.create
+    ).not.toHaveBeenCalled();
+  });
+
+  it("rejects a finding when the scan does not exist", async () => {
+    scanRepository.findById.mockResolvedValue(null);
+
+    await expect(
+      findingService.createFinding({
+        scanId: "6ab40f2a31d9796493ee8357",
+        category: "TEST",
+        title: "Test finding",
+        description: "Test description",
+        severity: "LOW"
+      })
+    ).rejects.toThrow("Scan not found");
+
+    expect(
+      scanRepository.findById
+    ).toHaveBeenCalledWith(
+      "6ab40f2a31d9796493ee8357"
+    );
+
+    expect(
+      findingRepository.create
+    ).not.toHaveBeenCalled();
+  });
+
+  it("creates a finding with an existing screenshot", async () => {
+    const mockFinding = {
+      _id: "finding-id",
+      scanId: "6ab40f2a31d9796493ee8357",
+      category: "VISUAL",
+      title: "Test screenshot finding",
+      description: "Test description",
+      severity: "MEDIUM",
+      screenshotId: "7ab40f2a31d9796493ee8357"
+    } as unknown as IFinding;
+
+    scanRepository.findById.mockResolvedValue(
+      {} as never
+    );
+
+    screenshotRepository.findById.mockResolvedValue(
+      {} as never
+    );
+
+    findingRepository.create.mockResolvedValue(
+      mockFinding
+    );
+
+    const result = await findingService.createFinding({
+      scanId: "6ab40f2a31d9796493ee8357",
+      category: "VISUAL",
+      title: "Test screenshot finding",
+      description: "Test description",
+      severity: "MEDIUM",
+      screenshotId: "7ab40f2a31d9796493ee8357"
+    });
+
+    expect(
+      screenshotRepository.findById
+    ).toHaveBeenCalledWith(
+      "7ab40f2a31d9796493ee8357"
+    );
+
+    expect(
+      findingRepository.create
+    ).toHaveBeenCalled();
+
+    expect(result).toBe(mockFinding);
+  });
+
+  it("rejects a finding when the screenshot does not exist", async () => {
+    scanRepository.findById.mockResolvedValue(
+      {} as never
+    );
+
+    screenshotRepository.findById.mockResolvedValue(
+      null
+    );
+
+    await expect(
+      findingService.createFinding({
+        scanId: "6ab40f2a31d9796493ee8357",
+        category: "VISUAL",
+        title: "Test screenshot finding",
+        description: "Test description",
+        severity: "MEDIUM",
+        screenshotId: "7ab40f2a31d9796493ee8357"
+      })
+    ).rejects.toThrow("Screenshot not found");
+
+    expect(
+      screenshotRepository.findById
+    ).toHaveBeenCalledWith(
+      "7ab40f2a31d9796493ee8357"
+    );
+
+    expect(
+      findingRepository.create
+    ).not.toHaveBeenCalled();
   });
 });
