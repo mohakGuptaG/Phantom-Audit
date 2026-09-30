@@ -2,10 +2,9 @@ import { Document, Model, Schema, Types, model } from "mongoose";
 
 export interface IScreenshot extends Document {
   scanId: Types.ObjectId;
-  storageKey: string;
-  mimeType: string;
-  width?: number;
-  height?: number;
+  pageType: string;
+  filePath: string;
+  capturedAt: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,26 +18,21 @@ const screenshotSchema = new Schema<IScreenshot>(
       index: true
     },
 
-    storageKey: {
+    pageType: {
       type: String,
       required: true,
       trim: true
     },
 
-    mimeType: {
+    filePath: {
       type: String,
       required: true,
       trim: true
     },
 
-    width: {
-      type: Number,
-      min: 1
-    },
-
-    height: {
-      type: Number,
-      min: 1
+    capturedAt: {
+      type: Date,
+      required: true
     }
   },
   {

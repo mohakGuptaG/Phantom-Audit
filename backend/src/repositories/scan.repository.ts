@@ -14,26 +14,39 @@ export class ScanRepository {
 
   async updateStatus(
     scanId: string,
-    status: ScanStatus
+    status: ScanStatus,
+    timestamps?: {
+      startedAt?: Date;
+      completedAt?: Date;
+    }
   ): Promise<IScan | null> {
     return Scan.findByIdAndUpdate(
       scanId,
-      { status },
-      { new: true, runValidators: true }
+      {
+        status,
+        ...timestamps
+      },
+      {
+        new: true,
+        runValidators: true
+      }
     );
   }
 
   async updateFailure(
     scanId: string,
-    error: string
+    errorMessage: string
   ): Promise<IScan | null> {
     return Scan.findByIdAndUpdate(
       scanId,
       {
         status: "FAILED",
-        error
+        errorMessage
       },
-      { new: true, runValidators: true }
+      {
+        new: true,
+        runValidators: true
+      }
     );
   }
 }

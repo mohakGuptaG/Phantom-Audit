@@ -14,6 +14,8 @@ describe("ScreenshotService", () => {
   let screenshotService: ScreenshotService;
   let screenshotRepository: jest.Mocked<ScreenshotRepository>;
 
+  const scanId = "6ab40f2a31d9796493ee8357";
+
   beforeEach(() => {
     screenshotRepository = {
       create: jest.fn(),
@@ -27,13 +29,14 @@ describe("ScreenshotService", () => {
   });
 
   it("creates a valid screenshot through the repository", async () => {
+    const capturedAt = new Date("2026-09-30T10:00:00.000Z");
+
     const mockScreenshot = {
       _id: "screenshot-id",
-      scanId: "6ab40f2a31d9796493ee8357",
-      storageKey: "scans/test/screenshot.png",
-      mimeType: "image/png",
-      width: 1280,
-      height: 720
+      scanId,
+      pageType: "PRODUCT",
+      filePath: "scans/test/screenshot.png",
+      capturedAt
     } as unknown as IScreenshot;
 
     screenshotRepository.create.mockResolvedValue(
@@ -41,19 +44,17 @@ describe("ScreenshotService", () => {
     );
 
     const result = await screenshotService.createScreenshot({
-      scanId: "6ab40f2a31d9796493ee8357",
-      storageKey: " scans/test/screenshot.png ",
-      mimeType: " image/png ",
-      width: 1280,
-      height: 720
+      scanId,
+      pageType: " PRODUCT ",
+      filePath: " scans/test/screenshot.png ",
+      capturedAt
     });
 
     expect(screenshotRepository.create).toHaveBeenCalledWith({
-      scanId: "6ab40f2a31d9796493ee8357",
-      storageKey: "scans/test/screenshot.png",
-      mimeType: "image/png",
-      width: 1280,
-      height: 720
+      scanId,
+      pageType: "PRODUCT",
+      filePath: "scans/test/screenshot.png",
+      capturedAt
     });
 
     expect(result).toBe(mockScreenshot);
@@ -63,8 +64,9 @@ describe("ScreenshotService", () => {
     await expect(
       screenshotService.createScreenshot({
         scanId: "invalid-id",
-        storageKey: "scans/test/screenshot.png",
-        mimeType: "image/png"
+        pageType: "PRODUCT",
+        filePath: "scans/test/screenshot.png",
+        capturedAt: new Date()
       })
     ).rejects.toThrow("Invalid scan ID");
 
@@ -73,15 +75,16 @@ describe("ScreenshotService", () => {
     ).not.toHaveBeenCalled();
   });
 
-  it("rejects a missing storage key", async () => {
+  it("rejects a missing page type", async () => {
     await expect(
       screenshotService.createScreenshot({
-        scanId: "6ab40f2a31d9796493ee8357",
-        storageKey: "",
-        mimeType: "image/png"
+        scanId,
+        pageType: "",
+        filePath: "scans/test/screenshot.png",
+        capturedAt: new Date()
       })
     ).rejects.toThrow(
-      "Screenshot storage key is required"
+      "Screenshot page type is required"
     );
 
     expect(
@@ -89,16 +92,33 @@ describe("ScreenshotService", () => {
     ).not.toHaveBeenCalled();
   });
 
-  it("rejects invalid dimensions", async () => {
+  it("rejects a missing file path", async () => {
     await expect(
       screenshotService.createScreenshot({
-        scanId: "6ab40f2a31d9796493ee8357",
-        storageKey: "scans/test/screenshot.png",
-        mimeType: "image/png",
-        width: 0
+        scanId,
+        pageType: "PRODUCT",
+        filePath: "",
+        capturedAt: new Date()
       })
     ).rejects.toThrow(
-      "Screenshot width must be greater than 0"
+      "Screenshot file path is required"
+    );
+
+    expect(
+      screenshotRepository.create
+    ).not.toHaveBeenCalled();
+  });
+
+  it("rejects an invalid capturedAt date", async () => {
+    await expect(
+      screenshotService.createScreenshot({
+        scanId,
+        pageType: "PRODUCT",
+        filePath: "scans/test/screenshot.png",
+        capturedAt: new Date("invalid")
+      })
+    ).rejects.toThrow(
+      "Screenshot capturedAt must be a valid date"
     );
 
     expect(

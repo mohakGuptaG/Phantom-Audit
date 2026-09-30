@@ -10,23 +10,27 @@ export class FindingRepository {
 
   async create(data: {
     scanId: string;
-    category: string;
-    title: string;
-    description: string;
+    patternType: string;
     severity: IFinding["severity"];
-    evidence?: string;
+    confidence?: number;
+    description: string;
+    pageType?: string;
     screenshotId?: string;
+    boundingBox?: IFinding["boundingBox"];
+    evidence?: string;
   }): Promise<IFinding> {
     return Finding.create({
       scanId: new Types.ObjectId(data.scanId),
-      category: data.category,
-      title: data.title,
-      description: data.description,
+      patternType: data.patternType,
       severity: data.severity,
-      evidence: data.evidence,
+      confidence: data.confidence,
+      description: data.description,
+      pageType: data.pageType,
       screenshotId: data.screenshotId
         ? new Types.ObjectId(data.screenshotId)
-        : undefined
+        : undefined,
+      boundingBox: data.boundingBox,
+      evidence: data.evidence
     });
   }
 }

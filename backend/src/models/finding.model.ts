@@ -9,17 +9,57 @@ export const FINDING_SEVERITIES = [
 
 export type FindingSeverity = (typeof FINDING_SEVERITIES)[number];
 
+export interface BoundingBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface IFinding extends Document {
   scanId: Types.ObjectId;
-  category: string;
-  title: string;
-  description: string;
+  patternType: string;
   severity: FindingSeverity;
-  evidence?: string;
+  confidence?: number;
+  description: string;
+  pageType?: string;
   screenshotId?: Types.ObjectId;
+  boundingBox?: BoundingBox;
+  evidence?: string;
   createdAt: Date;
   updatedAt: Date;
 }
+
+const boundingBoxSchema = new Schema<BoundingBox>(
+  {
+    x: {
+      type: Number,
+      required: true,
+      min: 0
+    },
+
+    y: {
+      type: Number,
+      required: true,
+      min: 0
+    },
+
+    width: {
+      type: Number,
+      required: true,
+      min: 0
+    },
+
+    height: {
+      type: Number,
+      required: true,
+      min: 0
+    }
+  },
+  {
+    _id: false
+  }
+);
 
 const findingSchema = new Schema<IFinding>(
   {
@@ -30,19 +70,7 @@ const findingSchema = new Schema<IFinding>(
       index: true
     },
 
-    category: {
-      type: String,
-      required: true,
-      trim: true
-    },
-
-    title: {
-      type: String,
-      required: true,
-      trim: true
-    },
-
-    description: {
+    patternType: {
       type: String,
       required: true,
       trim: true
@@ -54,7 +82,19 @@ const findingSchema = new Schema<IFinding>(
       required: true
     },
 
-    evidence: {
+    confidence: {
+      type: Number,
+      min: 0,
+      max: 1
+    },
+
+    description: {
+      type: String,
+      required: true,
+      trim: true
+    },
+
+    pageType: {
       type: String,
       trim: true
     },
@@ -62,6 +102,15 @@ const findingSchema = new Schema<IFinding>(
     screenshotId: {
       type: Schema.Types.ObjectId,
       ref: "Screenshot"
+    },
+
+    boundingBox: {
+      type: boundingBoxSchema
+    },
+
+    evidence: {
+      type: String,
+      trim: true
     }
   },
   {

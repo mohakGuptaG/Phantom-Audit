@@ -16,17 +16,15 @@ export class ScreenshotRepository {
 
   async create(data: {
     scanId: string;
-    storageKey: string;
-    mimeType: string;
-    width?: number;
-    height?: number;
+    pageType: string;
+    filePath: string;
+    capturedAt: Date;
   }): Promise<IScreenshot> {
     return Screenshot.create({
       scanId: new Types.ObjectId(data.scanId),
-      storageKey: data.storageKey,
-      mimeType: data.mimeType,
-      width: data.width,
-      height: data.height
+      pageType: data.pageType,
+      filePath: data.filePath,
+      capturedAt: data.capturedAt
     });
   }
 }

@@ -10,12 +10,14 @@ import { ScreenshotRepository } from "../repositories/screenshot.repository";
 
 export interface CreateFindingInput {
   scanId: string;
-  category: string;
-  title: string;
-  description: string;
+  patternType: string;
   severity: FindingSeverity;
-  evidence?: string;
+  confidence?: number;
+  description: string;
+  pageType?: string;
   screenshotId?: string;
+  boundingBox?: IFinding["boundingBox"];
+  evidence?: string;
 }
 
 export class FindingService {
@@ -25,33 +27,23 @@ export class FindingService {
     private readonly screenshotRepository: ScreenshotRepository
   ) {}
 
-  async getFindingsByScanId(
-    scanId: string
-  ): Promise<IFinding[]> {
+  async getFindingsByScanId(scanId: string): Promise<IFinding[]> {
     this.validateScanId(scanId);
 
     return this.findingRepository.findByScanId(scanId);
   }
 
-  async createFinding(
-    input: CreateFindingInput
-  ): Promise<IFinding> {
+  async createFinding(input: CreateFindingInput): Promise<IFinding> {
     this.validateScanId(input.scanId);
 
-    const scan = await this.scanRepository.findById(
-      input.scanId
-    );
+    const scan = await this.scanRepository.findById(input.scanId);
 
     if (!scan) {
       throw new Error("Scan not found");
     }
 
-    if (!input.category?.trim()) {
-      throw new Error("Finding category is required");
-    }
-
-    if (!input.title?.trim()) {
-      throw new Error("Finding title is required");
+    if (!input.patternType?.trim()) {
+      throw new Error("Finding pattern type is required");
     }
 
     if (!input.description?.trim()) {
@@ -62,29 +54,45 @@ export class FindingService {
       throw new Error("Invalid finding severity");
     }
 
+    if (
+      input.confidence !== undefined &&
+      (input.confidence < 0 || input.confidence > 1)
+    ) {
+      throw new Error("Finding confidence must be between 0 and 1");
+    }
+
     if (input.screenshotId) {
       if (!mongoose.isValidObjectId(input.screenshotId)) {
         throw new Error("Invalid screenshot ID");
       }
 
-      const screenshot =
-        await this.screenshotRepository.findById(
-          input.screenshotId
-        );
+      const screenshot = await this.screenshotRepository.findById(
+        input.screenshotId
+      );
 
       if (!screenshot) {
         throw new Error("Screenshot not found");
       }
     }
 
+    if (input.boundingBox) {
+      const { x, y, width, height } = input.boundingBox;
+
+      if (x < 0 || y < 0 || width < 0 || height < 0) {
+        throw new Error("Finding bounding box values must be non-negative");
+      }
+    }
+
     return this.findingRepository.create({
       scanId: input.scanId,
-      category: input.category.trim(),
-      title: input.title.trim(),
-      description: input.description.trim(),
+      patternType: input.patternType.trim(),
       severity: input.severity,
-      evidence: input.evidence?.trim(),
-      screenshotId: input.screenshotId
+      confidence: input.confidence,
+      description: input.description.trim(),
+      pageType: input.pageType?.trim(),
+      screenshotId: input.screenshotId,
+      boundingBox: input.boundingBox,
+      evidence: input.evidence?.trim()
     });
   }
 
@@ -99,9 +107,7 @@ export class FindingService {
   ): severity is FindingSeverity {
     return (
       typeof severity === "string" &&
-      FINDING_SEVERITIES.includes(
-        severity as FindingSeverity
-      )
+      FINDING_SEVERITIES.includes(severity as FindingSeverity)
     );
   }
 }

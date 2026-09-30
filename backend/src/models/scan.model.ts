@@ -18,8 +18,10 @@ export interface IScan extends Document {
   url: string;
   status: ScanStatus;
   score?: number;
-  error?: string;
+  errorMessage?: string;
   createdAt: Date;
+  startedAt?: Date;
+  completedAt?: Date;
   updatedAt: Date;
 }
 
@@ -44,9 +46,17 @@ const scanSchema = new Schema<IScan>(
       max: 100
     },
 
-    error: {
+    errorMessage: {
       type: String,
       trim: true
+    },
+
+    startedAt: {
+      type: Date
+    },
+
+    completedAt: {
+      type: Date
     }
   },
   {

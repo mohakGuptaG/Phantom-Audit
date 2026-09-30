@@ -52,9 +52,25 @@ export class ScanService {
       );
     }
 
+    const now = new Date();
+
+    const timestamps: {
+      startedAt?: Date;
+      completedAt?: Date;
+    } = {};
+
+    if (nextStatus === "STARTING" && !scan.startedAt) {
+      timestamps.startedAt = now;
+    }
+
+    if (nextStatus === "COMPLETED") {
+      timestamps.completedAt = now;
+    }
+
     const updatedScan = await this.scanRepository.updateStatus(
       scanId,
-      nextStatus
+      nextStatus,
+      timestamps
     );
 
     if (!updatedScan) {
@@ -66,7 +82,7 @@ export class ScanService {
 
   async failScan(
     scanId: string,
-    error: string
+    errorMessage: string
   ): Promise<IScan> {
     this.validateScanId(scanId);
 
@@ -76,16 +92,27 @@ export class ScanService {
       throw new Error("Scan not found");
     }
 
-    if (["COMPLETED", "FAILED", "CANCELLED"].includes(scan.status)) {
+    if (
+      ["COMPLETED", "FAILED", "CANCELLED"].includes(
+        scan.status
+      )
+    ) {
       throw new Error(
         `Cannot fail scan from status: ${scan.status}`
       );
     }
 
-    const updatedScan = await this.scanRepository.updateFailure(
-      scanId,
-      error
-    );
+    const trimmedErrorMessage = errorMessage.trim();
+
+    if (!trimmedErrorMessage) {
+      throw new Error("Error message is required");
+    }
+
+    const updatedScan =
+      await this.scanRepository.updateFailure(
+        scanId,
+        trimmedErrorMessage
+      );
 
     if (!updatedScan) {
       throw new Error("Failed to mark scan as failed");
